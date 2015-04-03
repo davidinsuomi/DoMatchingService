@@ -2,7 +2,19 @@ package ee.ut.cs.domatching;
 
 import android.util.Log;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import coap.*;
 import endpoint.Endpoint;
@@ -44,9 +56,61 @@ public class CoapServer extends LocalEndpoint{
         public void performPOST(POSTRequest request) {
 
             // retrieve text to convert from payload
-            String text = request.getPayloadString();
-            System.out.println("request  " + text);
+            String payload = request.getPayloadString();
+            String ontologyUri = GetOntologyUrl(payload);
+            String ontology = null;
+            try {
+                ontology = FetchOntology(ontologyUri);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("request  " + ontology);
         }
+    }
+
+    private void PerformMatchingTemperature(String payload) {
+        String ontologyUri = GetOntologyUrl(payload);
+        System.out.println(ontologyUri);
+        String ontology = null;
+        try {
+            ontology = FetchOntology(ontologyUri);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(ontology);
+    };
+
+    private String GetOntologyUrl(String payload){
+        List<String> list = new ArrayList<String>(Arrays.asList(payload.split(";")));
+        for(String string : list){
+            if(string.startsWith("rt=")){
+                return string.substring("rt=".length()).replace("\"", "");
+            }
+        }
+
+        return null;
+    }
+
+    private String FetchOntology(String ontologyUri) throws IOException {
+        if(!ontologyUri.startsWith("http")){
+            ontologyUri = "http://"+ ontologyUri;
+        }
+
+        HttpClient httpclient = new DefaultHttpClient();
+        HttpResponse response = httpclient.execute(new HttpGet(ontologyUri));
+        StatusLine statusLine = response.getStatusLine();
+        if(statusLine.getStatusCode() == HttpStatus.SC_OK){
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            response.getEntity().writeTo(out);
+            String responseString = out.toString();
+            out.close();
+            return responseString;
+        } else{
+            //Closes the connection.
+            response.getEntity().getContent().close();
+            throw new IOException(statusLine.getReasonPhrase());
+        }
+
     }
 
     private class ToUpperResource extends LocalResource {
