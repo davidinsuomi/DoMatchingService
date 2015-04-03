@@ -36,8 +36,8 @@ public class CoapServer extends LocalEndpoint{
     private class CoapResource extends LocalResource {
 
         public CoapResource() {
-            super("doMatching");
-            setResourceName("post rt and the matching ontology");
+            super("temperatureMatching");
+            setResourceName("post rt and the matching temperature ontology");
         }
 
         @Override
