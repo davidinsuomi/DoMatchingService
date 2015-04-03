@@ -68,31 +68,27 @@ public class CoapServer extends LocalEndpoint{
 
             // retrieve text to convert from payload
             String payload = request.getPayloadString();
+
             String ontologyUri = GetOntologyUrl(payload);
+
+            //TODO REMOVE DEGUG INFO this is for testing
+            ontologyUri = "198.12.87.129";
             String ontology = null;
             try {
                 ontology = FetchOntology(ontologyUri);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
+            PerformMatchingTemperature(ontology);
             System.out.println("request  " + ontology);
         }
     }
 
-    private void PerformMatchingTemperature(String payload) {
+    private void PerformMatchingTemperature(String ontology) {
         String relationshipUri = "http://purl.org/vocab/relationship/";
         Model model = ModelFactory.createDefaultModel();
         Property subclassof = model.createProperty(relationshipUri,"subclassof");
         Property onPropery = model.createProperty(relationshipUri,"onProperty");
-        String ontologyUri = GetOntologyUrl(payload);
-        System.out.println(ontologyUri);
-        String ontology = null;
-        try {
-            ontology = FetchOntology(ontologyUri);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         model.read(ontology,null);
 
