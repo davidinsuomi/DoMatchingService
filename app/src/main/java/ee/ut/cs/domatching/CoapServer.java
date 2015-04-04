@@ -8,6 +8,7 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.util.FileManager;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -18,6 +19,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,25 +74,25 @@ public class CoapServer extends LocalEndpoint{
             String ontologyUri = GetOntologyUrl(payload);
 
             //TODO REMOVE DEGUG INFO this is for testing
-            ontologyUri = "198.12.87.129";
+            ontologyUri = "http://198.12.87.129";
             String ontology = null;
-            try {
-                ontology = FetchOntology(ontologyUri);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            PerformMatchingTemperature(ontology);
+
+            PerformMatchingTemperature(ontologyUri);
             System.out.println("request  " + ontology);
         }
     }
 
-    private void PerformMatchingTemperature(String ontology) {
+    private void PerformMatchingTemperature(String ontologyUri) {
         String relationshipUri = "http://purl.org/vocab/relationship/";
         Model model = ModelFactory.createDefaultModel();
         Property subclassof = model.createProperty(relationshipUri,"subclassof");
         Property onPropery = model.createProperty(relationshipUri,"onProperty");
 
-        model.read(ontology,null);
+        InputStream in = FileManager.get().open(ontologyUri);
+        if (in == null) {
+            throw new IllegalArgumentException( "File:  not found");
+        }
+        model.read(in,"");
 
         ResIterator temperaturesRes = model.listSubjectsWithProperty(subclassof);
 
@@ -100,13 +102,13 @@ public class CoapServer extends LocalEndpoint{
             // ResIterator has a typed nextResource() method
             com.hp.hpl.jena.rdf.model.Resource temperatureRes = temperaturesRes.nextResource();
             // Print the URI of the resource
-            com.hp.hpl.jena.rdf.model.Resource matchResource = temperatureRes.getPropertyResourceValue(subclassof);
+            Statement matchStatement = temperatureRes.getProperty(subclassof);
+            com.hp.hpl.jena.rdf.model.Resource matchResource = matchStatement.getResource();
             if(matchResource.getURI().contains("temperature")){
-                System.out.println(temperatureRes.getURI());
+                Log.e(TAG,temperatureRes.getURI());
                 MatchTemperatureProperty(matchResource,onPropery);
             }
         }
-        System.out.println(ontology);
     };
 
     private static boolean MatchTemperatureProperty(com.hp.hpl.jena.rdf.model.Resource resource, Property property){
