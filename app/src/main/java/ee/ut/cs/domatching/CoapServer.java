@@ -1,5 +1,6 @@
 package ee.ut.cs.domatching;
 
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -44,10 +45,12 @@ public class CoapServer extends LocalEndpoint{
 	 *
 	 */
     private final String TAG = "CoapServer";
+    CoapDebugInfo coapDebugInfo;
 
-    public CoapServer() throws SocketException {
+    public CoapServer(CoapDebugInfo coapDebugInfo) throws SocketException {
 
         // add resources to the server
+        this.coapDebugInfo = coapDebugInfo;
         addResource(new CoapResource());
 //        addResource(new StorageResource());
 //        addResource(new ToUpperResource());
@@ -339,7 +342,7 @@ public class CoapServer extends LocalEndpoint{
     public void handleRequest(Request request) {
 
         // output the request
-        Log.e(TAG,"Incoming request:");
+        coapDebugInfo.printDebugInfo("Incoming request");
         request.log();
 
         // handle the request
