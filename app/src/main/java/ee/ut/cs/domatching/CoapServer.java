@@ -23,7 +23,9 @@ import java.io.InputStream;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import coap.*;
 import endpoint.Endpoint;
@@ -73,16 +75,13 @@ public class CoapServer extends LocalEndpoint{
 
             String ontologyUri = GetOntologyUrl(payload);
 
-            //TODO REMOVE DEGUG INFO this is for testing
-            ontologyUri = "http://198.12.87.129";
-            String ontology = null;
+            boolean matchResult = PerformMatchingTemperature(ontologyUri);
 
-            PerformMatchingTemperature(ontologyUri);
-            System.out.println("request  " + ontology);
+            request.respond(CodeRegistry.V3_RESP_OK, matchResult ? "true" : "false");
         }
     }
 
-    private void PerformMatchingTemperature(String ontologyUri) {
+    private boolean PerformMatchingTemperature(String ontologyUri) {
         String relationshipUri = "http://purl.org/vocab/relationship/";
         Model model = ModelFactory.createDefaultModel();
         Property subclassof = model.createProperty(relationshipUri,"subclassof");
@@ -96,6 +95,7 @@ public class CoapServer extends LocalEndpoint{
 
         ResIterator temperaturesRes = model.listSubjectsWithProperty(subclassof);
 
+        boolean matchResult;
         // Because subjects of statements are Resources, the method returned a ResIterator
         while (temperaturesRes.hasNext()) {
 
@@ -106,19 +106,44 @@ public class CoapServer extends LocalEndpoint{
             com.hp.hpl.jena.rdf.model.Resource matchResource = matchStatement.getResource();
             if(matchResource.getURI().contains("temperature")){
                 Log.e(TAG,temperatureRes.getURI());
-                MatchTemperatureProperty(matchResource,onPropery);
+                matchResult = MatchTemperatureProperty(matchResource,onPropery);
+                if(matchResult){
+                    return true;
+                }
             }
         }
+
+        return false;
+
     };
 
     private static boolean MatchTemperatureProperty(com.hp.hpl.jena.rdf.model.Resource resource, Property property){
-        boolean isMatch = false;
+        HashMap<String,Boolean> temperatureOntologyMap =InitTemperatureOntologyMap();
+
         StmtIterator iterator = resource.listProperties();
         while(iterator.hasNext()){
             Statement statement = iterator.nextStatement();
-            System.out.println("object " + statement.getObject());
+            String key = statement.getObject().toString();
+            if(temperatureOntologyMap.containsKey(key)){
+                temperatureOntologyMap.put(key, true);
+            }
         }
-        return isMatch;
+
+        for(Map.Entry<String, Boolean> entry: temperatureOntologyMap.entrySet()){
+            if(!entry.getValue()){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static HashMap<String,Boolean>  InitTemperatureOntologyMap(){
+        HashMap<String,Boolean>  temperatureOntologyMap = new HashMap<String,Boolean>();
+        temperatureOntologyMap.put("http://ontology/scale" , false);
+        temperatureOntologyMap.put("http://ontology/degree" , false);
+        return temperatureOntologyMap;
+
     }
 
 
