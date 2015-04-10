@@ -31,7 +31,7 @@ public class UDPLayer extends Layer {
 	// default CoAP port as defined in draft-ietf-core-coap-05, section 7.1:
 	// MUST be supported by a server for resource discovery and 
 	// SHOULD be supported for providing access to other resources. 
-	public static final int DEFAULT_PORT      = 5683;
+	public static final int DEFAULT_PORT      = 5684;
 	
 	// CoAP URI scheme name as defined in draft-ietf-core-coap-05, section 11.4:
 	public static final String URI_SCHEME_NAME = "coap";

@@ -79,9 +79,7 @@ public class CoapServer extends LocalEndpoint{
             String ontologyUri = GetOntologyUrl(payload);
 
             boolean matchResult = PerformMatchingTemperature(ontologyUri);
-
             request.respond(CodeRegistry.V3_RESP_OK, matchResult ? "true" : "false");
-
             coapDebugInfo.printDebugInfo("Matching Result " + (matchResult ? "true" : "false"));
 
 
